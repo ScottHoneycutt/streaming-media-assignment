@@ -18,10 +18,9 @@ const streamMedia = (fileObject, request, response) => {
       range = 'bytes=0-';
     }
 
+    //Determine what chunks of data to send based upon headers. -SJH
     const positions = range.replace(/bytes=/, '').split('-');
-
     let start = parseInt(positions[0], 10);
-
     const total = statsObject.size;
     const end = positions[1] ? parseInt(positions[1], 10) : total - 1;
 
