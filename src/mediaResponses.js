@@ -1,6 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 
+const writeResponseHead = (response, chunkSize, start, end, total, fileEnding) => {
+  response.writeHead(206, {
+    'Content-Range': `bytes ${start}-${end}/${total}`,
+    'Accept-Ranges': 'bytes',
+    'Content-Length': chunkSize,
+    'Content-Type': `video/${fileEnding}`,
+  });
+};
+
 // Helper method. Steams media (based upon the specified fileObject) back to the client. -SJH
 const streamMedia = (fileObject, request, response) => {
   fs.stat(fileObject, (error, statsObject) => {
@@ -18,7 +27,7 @@ const streamMedia = (fileObject, request, response) => {
       range = 'bytes=0-';
     }
 
-    //Determine what chunks of data to send based upon headers. -SJH
+    // Determine what chunks of data to send based upon headers. -SJH
     const positions = range.replace(/bytes=/, '').split('-');
     let start = parseInt(positions[0], 10);
     const total = statsObject.size;
@@ -29,12 +38,14 @@ const streamMedia = (fileObject, request, response) => {
     }
 
     const chunkSize = end - start + 1;
-    response.writeHead(206, {
-      'Content-Range': `bytes ${start}-${end}/${total}`,
-      'Accept-Ranges': 'bytes',
-      'Content-Length': chunkSize,
-      'Content-Type': 'video/mp4',
-    });
+    writeResponseHead(
+      response,
+      chunkSize,
+      start,
+      end,
+      total,
+      request.url.substr(request.url.length - 4),
+    );
 
     const stream = fs.createReadStream(fileObject, { start, end });
 
