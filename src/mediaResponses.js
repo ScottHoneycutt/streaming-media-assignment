@@ -1,13 +1,22 @@
 const fs = require('fs');
 const path = require('path');
 
-const writeResponseHead = (response, chunkSize, start, end, total, fileEnding) => {
-  response.writeHead(206, {
-    'Content-Range': `bytes ${start}-${end}/${total}`,
-    'Accept-Ranges': 'bytes',
-    'Content-Length': chunkSize,
-    'Content-Type': `video/${fileEnding}`,
-  });
+const writeResponseHead = (response, chunkSize, start, end, total, isMp3) => {
+  if (isMp3) {
+    response.writeHead(206, {
+      'Content-Range': `bytes ${start}-${end}/${total}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunkSize,
+      'Content-Type': 'audio/mpeg',
+    });
+  } else {
+    response.writeHead(206, {
+      'Content-Range': `bytes ${start}-${end}/${total}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunkSize,
+      'Content-Type': 'video/mp4',
+    });
+  }
 };
 
 // Helper method. Steams media (based upon the specified fileObject) back to the client. -SJH
@@ -38,13 +47,18 @@ const streamMedia = (fileObject, request, response) => {
     }
 
     const chunkSize = end - start + 1;
+    // Check to see if file type is mp3 or mp4 -SJH
+    let isMp3 = false;
+    if (request.url.substr(request.url.length - 4) === '.mp3') {
+      isMp3 = true;
+    }
     writeResponseHead(
       response,
       chunkSize,
       start,
       end,
       total,
-      request.url.substr(request.url.length - 4),
+      isMp3,
     );
 
     const stream = fs.createReadStream(fileObject, { start, end });
@@ -69,13 +83,13 @@ const getParty = (request, response) => {
 
 // Called in server.js.  -SJH
 const getBird = (request, response) => {
-  const fileObject = path.resolve(__dirname, '../client/Bird.mp4');
+  const fileObject = path.resolve(__dirname, '../client/bird.mp4');
   return streamMedia(fileObject, request, response);
 };
 
 // Called in server.js.  -SJH
 const getBling = (request, response) => {
-  const fileObject = path.resolve(__dirname, '../client/Bling.mp3');
+  const fileObject = path.resolve(__dirname, '../client/bling.mp3');
   return streamMedia(fileObject, request, response);
 };
 
